@@ -1,140 +1,799 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuralCodeLab | CCAI Dashboard</title>
+    <title>CCAI Ops Hub | Task Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     <style>
-        /* Estilo oscuro tipo Terminal/IDE */
-        :root { --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9; --accent: #58a6ff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 800px; margin: 0 auto; }
-        
-        /* Inputs y Botones */
-        input, select { background: var(--bg); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
-        button { background: #238636; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #2ea043; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-        /* Tarjetas */
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; transition: transform 0.2s; }
-        .card:hover { border-color: var(--accent); transform: translateX(5px); }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        h3 { margin: 0 0 10px 0; font-size: 16px; color: var(--accent); }
-        
-        /* Etiquetas */
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid var(--border); margin-right: 4px; }
-        .status-open { color: #3fb950; border-color: #3fb950; }
-        
-        /* Configuración inicial */
-        #configPanel { background: #21262d; padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; }
-        .hidden { display: none; }
-    </style>
-</head>
-<body>
-
-    <div style="display: flex; align-items: center; justify-content: space-between;">
-        <h1>🚀 NeuralCodeLab Ops</h1>
-        <button onclick="clearConfig()" style="background: transparent; border: 1px solid var(--border); font-size: 12px;">⚙️ Reset Config</button>
-    </div>
-
-    <div id="configPanel">
-        <h3>🔐 Configuración Inicial</h3>
-        <p style="font-size: 0.9em; color: #8b949e;">Tus datos se guardan solo en tu navegador (Local Storage).</p>
-        <input type="text" id="repoUser" placeholder="Usuario de GitHub (ej. devlewiso)">
-        <input type="text" id="repoName" placeholder="Nombre del Repo (ej. neuralcodelab-dashboard)">
-        <input type="password" id="token" placeholder="Personal Access Token (ghp_...)">
-        <button onclick="saveConfig()">Guardar y Cargar</button>
-    </div>
-
-    <div id="mainApp" class="hidden">
-        <select id="labelFilter" onchange="fetchIssues()">
-            <option value="">📂 Ver Todo (CCAI + GenC + Infra)</option>
-            <option value="genc">🟢 Proyecto GenC</option>
-            <option value="auralink">🔵 AuraLink</option>
-            <option value="bug">🔴 Bugs</option>
-        </select>
-        <div id="loading">Cargando datos de GitHub...</div>
-        <div id="issuesContainer"></div>
-    </div>
-
-    <script>
-        // Cargar config al iniciar
-        const storedUser = localStorage.getItem('gh_user');
-        const storedRepo = localStorage.getItem('gh_repo');
-        const storedToken = localStorage.getItem('gh_token');
-
-        if (storedUser && storedToken) {
-            document.getElementById('configPanel').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-            fetchIssues();
+        :root {
+            --bg: #F8FAFC;
+            --surface: #FFFFFF;
+            --border: #E2E8F0;
+            --text: #0F172A;
+            --textMuted: #64748B;
+            --accent: #6366F1;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        function saveConfig() {
-            const user = document.getElementById('repoUser').value;
-            const repo = document.getElementById('repoName').value;
-            const token = document.getElementById('token').value;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-            if(user && repo && token) {
-                localStorage.setItem('gh_user', user);
-                localStorage.setItem('gh_repo', repo);
-                localStorage.setItem('gh_token', token);
-                location.reload();
-            } else {
-                alert("Faltan datos bro!");
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo i {
+            font-size: 28px;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            border: none;
+            color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--textMuted);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .board-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        .board-column {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 500px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .column-title {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .column-count {
+            background: var(--bg);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--textMuted);
+        }
+
+        .task-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .task-card:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .task-card.priority-high {
+            border-left-color: var(--danger);
+        }
+
+        .task-card.priority-medium {
+            border-left-color: var(--warning);
+        }
+
+        .task-card.priority-low {
+            border-left-color: var(--success);
+        }
+
+        .task-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .task-assignee {
+            font-size: 13px;
+            color: var(--textMuted);
+            margin-bottom: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        function clearConfig() {
-            localStorage.clear();
-            location.reload();
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
         }
 
-        async function fetchIssues() {
-            const user = localStorage.getItem('gh_user');
-            const repo = localStorage.getItem('gh_repo');
-            const token = localStorage.getItem('gh_token');
-            const filter = document.getElementById('labelFilter').value;
-            const container = document.getElementById('issuesContainer');
-            
-            container.innerHTML = '';
-            document.getElementById('loading').style.display = 'block';
+        .modal-title {
+            font-size: 24px;
+            font-weight: 800;
+        }
 
-            let url = `https://api.github.com/repos/${user}/${repo}/issues?state=open`;
-            if (filter) url += `&labels=${filter}`;
+        .close-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--textMuted);
+            font-size: 20px;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: var(--danger);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .board-container {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-network-wired"></i>
+                <h1>CCAI<span>Ops</span></h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn" onclick="openConfigModal()">
+                    <i class="fas fa-cog"></i>
+                    Config
+                </button>
+                <button class="btn" onclick="syncFromGitHub()">
+                    <i class="fas fa-sync"></i>
+                    Sync from GitHub
+                </button>
+                <button class="btn btn-success" onclick="openNewTaskModal()">
+                    <i class="fas fa-plus"></i>
+                    Nueva Tarea
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Tasks</div>
+                <div class="stat-value" id="totalTasks">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pendientes</div>
+                <div class="stat-value" id="pendingTasks">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">En Progreso</div>
+                <div class="stat-value" id="progressTasks">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Completadas</div>
+                <div class="stat-value" id="doneTasks">0</div>
+            </div>
+        </div>
+
+        <div class="board-container">
+            <div class="board-column">
+                <div class="column-header">
+                    <div class="column-title">📋 Pendiente</div>
+                    <div class="column-count" id="count-pending">0</div>
+                </div>
+                <div id="column-pending"></div>
+            </div>
+
+            <div class="board-column">
+                <div class="column-header">
+                    <div class="column-title">🚀 En Progreso</div>
+                    <div class="column-count" id="count-progress">0</div>
+                </div>
+                <div id="column-progress"></div>
+            </div>
+
+            <div class="board-column">
+                <div class="column-header">
+                    <div class="column-title">✅ Completado</div>
+                    <div class="column-count" id="count-done">0</div>
+                </div>
+                <div id="column-done"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW TASK MODAL -->
+    <div class="modal" id="newTaskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-plus"></i> Nueva Tarea</h2>
+                <button class="close-btn" onclick="closeNewTaskModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="newTaskForm">
+                <div class="form-group">
+                    <label class="form-label">Título</label>
+                    <input type="text" class="form-input" id="taskTitle" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Responsable</label>
+                    <input type="text" class="form-input" id="taskAssignee" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prioridad</label>
+                    <select class="form-select" id="taskPriority">
+                        <option value="Low">Baja</option>
+                        <option value="Medium" selected>Media</option>
+                        <option value="High">Alta</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Estado</label>
+                    <select class="form-select" id="taskStatus">
+                        <option value="Pending" selected>Pendiente</option>
+                        <option value="In Progress">En Progreso</option>
+                        <option value="Done">Completado</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%;">
+                    <i class="fas fa-save"></i> Guardar Tarea
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONFIG MODAL -->
+    <div class="modal" id="configModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-cog"></i> GitHub Config</h2>
+                <button class="close-btn" onclick="closeConfigModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="configForm">
+                <div class="form-group">
+                    <label class="form-label">GitHub Token</label>
+                    <input type="password" class="form-input" id="githubToken" placeholder="ghp_..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Usuario</label>
+                    <input type="text" class="form-input" id="githubUser" value="devlewiso" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Repositorio</label>
+                    <input type="text" class="form-input" id="githubRepo" value="Todo_ProjectName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Project ID (opcional)</label>
+                    <input type="number" class="form-input" id="githubProjectId" value="2">
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%;">
+                    <i class="fas fa-save"></i> Guardar Config
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        let tasks = [];
+        let githubConfig = {
+            token: localStorage.getItem('gh_token') || null,
+            user: localStorage.getItem('gh_user') || 'devlewiso',
+            repo: localStorage.getItem('gh_repo') || 'Todo_ProjectName',
+            projectId: localStorage.getItem('gh_project') || '2'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            renderTasks();
+        });
+
+        function loadConfig() {
+            if (githubConfig.token) {
+                document.getElementById('githubToken').value = githubConfig.token;
+                document.getElementById('githubUser').value = githubConfig.user;
+                document.getElementById('githubRepo').value = githubConfig.repo;
+                document.getElementById('githubProjectId').value = githubConfig.projectId;
+            }
+        }
+
+        function openNewTaskModal() {
+            document.getElementById('newTaskModal').classList.add('active');
+        }
+
+        function closeNewTaskModal() {
+            document.getElementById('newTaskModal').classList.remove('active');
+            document.getElementById('newTaskForm').reset();
+        }
+
+        function openConfigModal() {
+            document.getElementById('configModal').classList.add('active');
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').classList.remove('active');
+        }
+
+        // New Task Form
+        document.getElementById('newTaskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const task = {
+                id: Date.now(),
+                title: document.getElementById('taskTitle').value,
+                assignee: document.getElementById('taskAssignee').value,
+                priority: document.getElementById('taskPriority').value,
+                status: document.getElementById('taskStatus').value
+            };
+
+            tasks.push(task);
+            renderTasks();
+            closeNewTaskModal();
+
+            // Sync with GitHub
+            await syncTaskWithGitHub(task);
+        });
+
+        // Config Form
+        document.getElementById('configForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            githubConfig.token = document.getElementById('githubToken').value;
+            githubConfig.user = document.getElementById('githubUser').value;
+            githubConfig.repo = document.getElementById('githubRepo').value;
+            githubConfig.projectId = document.getElementById('githubProjectId').value;
+
+            localStorage.setItem('gh_token', githubConfig.token);
+            localStorage.setItem('gh_user', githubConfig.user);
+            localStorage.setItem('gh_repo', githubConfig.repo);
+            localStorage.setItem('gh_project', githubConfig.projectId);
+
+            alert('✅ Configuración guardada');
+            closeConfigModal();
+        });
+
+        function renderTasks() {
+            // Clear columns
+            document.getElementById('column-pending').innerHTML = '';
+            document.getElementById('column-progress').innerHTML = '';
+            document.getElementById('column-done').innerHTML = '';
+
+            let pending = 0, progress = 0, done = 0;
+
+            tasks.forEach(task => {
+                const card = createTaskCard(task);
+
+                if (task.status === 'Pending') {
+                    document.getElementById('column-pending').appendChild(card);
+                    pending++;
+                } else if (task.status === 'In Progress') {
+                    document.getElementById('column-progress').appendChild(card);
+                    progress++;
+                } else if (task.status === 'Done') {
+                    document.getElementById('column-done').appendChild(card);
+                    done++;
+                }
+            });
+
+            // Update stats
+            document.getElementById('totalTasks').textContent = tasks.length;
+            document.getElementById('pendingTasks').textContent = pending;
+            document.getElementById('progressTasks').textContent = progress;
+            document.getElementById('doneTasks').textContent = done;
+            document.getElementById('count-pending').textContent = pending;
+            document.getElementById('count-progress').textContent = progress;
+            document.getElementById('count-done').textContent = done;
+        }
+
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = `task-card priority-${task.priority.toLowerCase()}`;
+            card.innerHTML = `
+                <div class="task-title">${task.title}</div>
+                <div class="task-assignee">👤 ${task.assignee}</div>
+            `;
+            return card;
+        }
+
+        async function syncTaskWithGitHub(task) {
+            if (!githubConfig.token) return;
 
             try {
-                const response = await fetch(url, {
-                    headers: { 'Authorization': `token ${token}` }
+                const response = await fetch(`https://api.github.com/repos/${githubConfig.user}/${githubConfig.repo}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${githubConfig.token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: `[${task.status}] ${task.title}`,
+                        body: `**Responsable**: ${task.assignee}\\n**Prioridad**: ${task.priority}\\n**Estado**: ${task.status}`,
+                        labels: [task.priority.toLowerCase(), task.status.toLowerCase().replace(' ', '-')]
+                    })
                 });
 
-                if (!response.ok) throw new Error('Error de auth o repo no encontrado');
+                if (response.ok) {
+                    const issue = await response.json();
+                    console.log('✅ Issue creado:', issue.html_url);
+
+                    // Add to Project if configured
+                    if (githubConfig.projectId) {
+                        await addToProject(issue.node_id);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+            }
+        }
+
+        async function addToProject(issueNodeId) {
+            try {
+                // Get project node ID
+                const projectQuery = `
+                    query($login: String!, $number: Int!) {
+                        user(login: $login) {
+                            projectV2(number: $number) { id }
+                        }
+                    }
+                `;
+
+                const projectRes = await fetch('https://api.github.com/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `bearer ${githubConfig.token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: projectQuery,
+                        variables: {
+                            login: githubConfig.user,
+                            number: parseInt(githubConfig.projectId)
+                        }
+                    })
+                });
+
+                const projectData = await projectRes.json();
+                const projectNodeId = projectData.data?.user?.projectV2?.id;
+
+                if (!projectNodeId) return;
+
+                // Add issue to project
+                const addMutation = `
+                    mutation($projectId: ID!, $contentId: ID!) {
+                        addProjectV2ItemById(input: {
+                            projectId: $projectId
+                            contentId: $contentId
+                        }) {
+                            item { id }
+                        }
+                    }
+                `;
+
+                await fetch('https://api.github.com/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `bearer ${githubConfig.token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: addMutation,
+                        variables: {
+                            projectId: projectNodeId,
+                            contentId: issueNodeId
+                        }
+                    })
+                });
+
+                console.log('✅ Agregado al Project');
+            } catch (error) {
+                console.error('❌ Error al agregar al proyecto:', error);
+            }
+        }
+
+        // Sync FROM GitHub (load issues into dashboard)
+        async function syncFromGitHub() {
+            if (!githubConfig.token || !githubConfig.user || !githubConfig.repo) {
+                alert('⚠️ Primero configura GitHub en "Config"');
+                openConfigModal();
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://api.github.com/repos/${githubConfig.user}/${githubConfig.repo}/issues?state=open`, {
+                    headers: {
+                        'Authorization': `token ${githubConfig.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar issues');
+                }
 
                 const issues = await response.json();
-                document.getElementById('loading').style.display = 'none';
 
+                // Clear existing tasks
+                tasks = [];
+
+                // Convert issues to tasks
                 issues.forEach(issue => {
-                    // Renderizado simple de tarjeta
-                    const labelsHtml = issue.labels.map(l => 
-                        `<span class="badge" style="color:#${l.color}; border-color:#${l.color}">${l.name}</span>`
-                    ).join('');
+                    // Parse status from title (e.g., "[Pending] Task name")
+                    const statusMatch = issue.title.match(/\[(.*?)\]/);
+                    let status = 'Pending';
 
-                    const html = `
-                        <div class="card">
-                            <div class="card-header">
-                                <h3><a href="${issue.html_url}" target="_blank" style="text-decoration:none; color:inherit;">${issue.title}</a></h3>
-                                <span class="badge status-open">#${issue.number}</span>
-                            </div>
-                            <p style="font-size: 14px; color: #8b949e; margin-top: 5px;">
-                                ${issue.body ? issue.body.substring(0, 100) + '...' : 'Sin descripción'}
-                            </p>
-                            <div style="margin-top:10px;">${labelsHtml}</div>
-                        </div>
-                    `;
-                    container.innerHTML += html;
+                    if (statusMatch) {
+                        const statusText = statusMatch[1];
+                        if (statusText.includes('Progress')) status = 'In Progress';
+                        else if (statusText.includes('Done') || statusText.includes('Completado')) status = 'Done';
+                    }
+
+                    // Parse priority from labels
+                    let priority = 'Medium';
+                    if (issue.labels.some(l => l.name.toLowerCase() === 'high')) priority = 'High';
+                    else if (issue.labels.some(l => l.name.toLowerCase() === 'low')) priority = 'Low';
+
+                    // Parse assignee from body
+                    const assigneeMatch = issue.body?.match(/\*\*Responsable\*\*:\s*(.+)/);
+                    const assignee = assigneeMatch ? assigneeMatch[1].trim() : 'Sin asignar';
+
+                    // Clean title (remove status prefix)
+                    const title = issue.title.replace(/\[.*?\]\s*/, '');
+
+                    tasks.push({
+                        id: issue.id,
+                        title: title,
+                        assignee: assignee,
+                        priority: priority,
+                        status: status,
+                        githubIssue: issue.number
+                    });
                 });
+
+                renderTasks();
+                alert(`✅ ${tasks.length} tareas cargadas desde GitHub`);
             } catch (error) {
-                container.innerHTML = `<p style="color:red">Error: ${error.message}. <br>Revisa tu token o nombre del repo.</p>`;
+                console.error('❌ Error:', error);
+                alert('❌ Error al cargar tareas desde GitHub');
             }
         }
     </script>
 </body>
+
 </html>
