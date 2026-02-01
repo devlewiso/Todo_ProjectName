@@ -373,7 +373,7 @@
             <div class="header-actions">
                 <button class="btn" onclick="openConfigModal()">
                     <i class="fas fa-cog"></i>
-                    Config
+                    Settings
                 </button>
                 <button class="btn" onclick="syncFromGitHub()">
                     <i class="fas fa-sync"></i>
@@ -381,7 +381,7 @@
                 </button>
                 <button class="btn btn-success" onclick="openNewTaskModal()">
                     <i class="fas fa-plus"></i>
-                    Nueva Tarea
+                    New Task
                 </button>
             </div>
         </div>
@@ -394,15 +394,15 @@
                 <div class="stat-value" id="totalTasks">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Pendientes</div>
+                <div class="stat-label">Pending</div>
                 <div class="stat-value" id="pendingTasks">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">En Progreso</div>
+                <div class="stat-label">In Progress</div>
                 <div class="stat-value" id="progressTasks">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Completadas</div>
+                <div class="stat-label">Completed</div>
                 <div class="stat-value" id="doneTasks">0</div>
             </div>
         </div>
@@ -410,7 +410,7 @@
         <div class="board-container">
             <div class="board-column">
                 <div class="column-header">
-                    <div class="column-title">📋 Pendiente</div>
+                    <div class="column-title">📋 Pending</div>
                     <div class="column-count" id="count-pending">0</div>
                 </div>
                 <div id="column-pending"></div>
@@ -418,7 +418,7 @@
 
             <div class="board-column">
                 <div class="column-header">
-                    <div class="column-title">🚀 En Progreso</div>
+                    <div class="column-title">🚀 In Progress</div>
                     <div class="column-count" id="count-progress">0</div>
                 </div>
                 <div id="column-progress"></div>
@@ -426,7 +426,7 @@
 
             <div class="board-column">
                 <div class="column-header">
-                    <div class="column-title">✅ Completado</div>
+                    <div class="column-title">✅ Completed</div>
                     <div class="column-count" id="count-done">0</div>
                 </div>
                 <div id="column-done"></div>
@@ -438,38 +438,38 @@
     <div class="modal" id="newTaskModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title"><i class="fas fa-plus"></i> Nueva Tarea</h2>
+                <h2 class="modal-title"><i class="fas fa-plus"></i> New Task</h2>
                 <button class="close-btn" onclick="closeNewTaskModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <form id="newTaskForm">
                 <div class="form-group">
-                    <label class="form-label">Título</label>
+                    <label class="form-label">Title</label>
                     <input type="text" class="form-input" id="taskTitle" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Responsable</label>
+                    <label class="form-label">Assignee</label>
                     <input type="text" class="form-input" id="taskAssignee" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Prioridad</label>
+                    <label class="form-label">Priority</label>
                     <select class="form-select" id="taskPriority">
-                        <option value="Low">Baja</option>
-                        <option value="Medium" selected>Media</option>
-                        <option value="High">Alta</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Estado</label>
+                    <label class="form-label">Status</label>
                     <select class="form-select" id="taskStatus">
-                        <option value="Pending" selected>Pendiente</option>
-                        <option value="In Progress">En Progreso</option>
-                        <option value="Done">Completado</option>
+                        <option value="Pending" selected>Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Done">Completed</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-success" style="width: 100%;">
-                    <i class="fas fa-save"></i> Guardar Tarea
+                    <i class="fas fa-save"></i> Save Task
                 </button>
             </form>
         </div>
@@ -479,7 +479,7 @@
     <div class="modal" id="configModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title"><i class="fas fa-cog"></i> GitHub Config</h2>
+                <h2 class="modal-title"><i class="fas fa-cog"></i> GitHub Settings</h2>
                 <button class="close-btn" onclick="closeConfigModal()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -490,19 +490,19 @@
                     <input type="password" class="form-input" id="githubToken" placeholder="ghp_..." required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Usuario</label>
+                    <label class="form-label">Username</label>
                     <input type="text" class="form-input" id="githubUser" value="devlewiso" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Repositorio</label>
+                    <label class="form-label">Repository</label>
                     <input type="text" class="form-input" id="githubRepo" value="Todo_ProjectName" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Project ID (opcional)</label>
+                    <label class="form-label">Project ID (optional)</label>
                     <input type="number" class="form-input" id="githubProjectId" value="2">
                 </div>
                 <button type="submit" class="btn btn-success" style="width: 100%;">
-                    <i class="fas fa-save"></i> Guardar Config
+                    <i class="fas fa-save"></i> Save Settings
                 </button>
             </form>
         </div>
@@ -584,7 +584,7 @@
             localStorage.setItem('gh_repo', githubConfig.repo);
             localStorage.setItem('gh_project', githubConfig.projectId);
 
-            alert('✅ Configuración guardada');
+            alert('✅ Settings saved successfully');
             closeConfigModal();
         });
 
@@ -644,14 +644,14 @@
                     },
                     body: JSON.stringify({
                         title: `[${task.status}] ${task.title}`,
-                        body: `**Responsable**: ${task.assignee}\\n**Prioridad**: ${task.priority}\\n**Estado**: ${task.status}`,
+                        body: `**Assignee**: ${task.assignee}\\n**Priority**: ${task.priority}\\n**Status**: ${task.status}`,
                         labels: [task.priority.toLowerCase(), task.status.toLowerCase().replace(' ', '-')]
                     })
                 });
 
                 if (response.ok) {
                     const issue = await response.json();
-                    console.log('✅ Issue creado:', issue.html_url);
+                    console.log('✅ Issue created:', issue.html_url);
 
                     // Add to Project if configured
                     if (githubConfig.projectId) {
@@ -721,16 +721,16 @@
                     })
                 });
 
-                console.log('✅ Agregado al Project');
+                console.log('✅ Added to Project');
             } catch (error) {
-                console.error('❌ Error al agregar al proyecto:', error);
+                console.error('❌ Error adding to project:', error);
             }
         }
 
         // Sync FROM GitHub (load issues into dashboard)
         async function syncFromGitHub() {
             if (!githubConfig.token || !githubConfig.user || !githubConfig.repo) {
-                alert('⚠️ Primero configura GitHub en "Config"');
+                alert('⚠️ Please configure GitHub settings first');
                 openConfigModal();
                 return;
             }
@@ -770,8 +770,8 @@
                     else if (issue.labels.some(l => l.name.toLowerCase() === 'low')) priority = 'Low';
 
                     // Parse assignee from body
-                    const assigneeMatch = issue.body?.match(/\*\*Responsable\*\*:\s*(.+)/);
-                    const assignee = assigneeMatch ? assigneeMatch[1].trim() : 'Sin asignar';
+                    const assigneeMatch = issue.body?.match(/\*\*Assignee\*\*:\s*(.+)/);
+                    const assignee = assigneeMatch ? assigneeMatch[1].trim() : 'Unassigned';
 
                     // Clean title (remove status prefix)
                     const title = issue.title.replace(/\[.*?\]\s*/, '');
@@ -787,10 +787,10 @@
                 });
 
                 renderTasks();
-                alert(`✅ ${tasks.length} tareas cargadas desde GitHub`);
+                alert(`✅ ${tasks.length} tasks loaded from GitHub`);
             } catch (error) {
                 console.error('❌ Error:', error);
-                alert('❌ Error al cargar tareas desde GitHub');
+                alert('❌ Error loading tasks from GitHub');
             }
         }
     </script>
