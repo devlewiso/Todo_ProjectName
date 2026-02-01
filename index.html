@@ -452,22 +452,63 @@
                     <label class="form-label">Assignee</label>
                     <input type="text" class="form-input" id="taskAssignee" required>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Priority</label>
-                    <select class="form-select" id="taskPriority">
-                        <option value="Low">Low</option>
-                        <option value="Medium" selected>Medium</option>
-                        <option value="High">High</option>
-                    </select>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Priority</label>
+                        <select class="form-select" id="taskPriority">
+                            <option value="Low">🟢 Low</option>
+                            <option value="Medium" selected>🟡 Medium</option>
+                            <option value="High">🔴 High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Size</label>
+                        <select class="form-select" id="taskSize">
+                            <option value="S">S - Small</option>
+                            <option value="M" selected>M - Medium</option>
+                            <option value="L">L - Large</option>
+                            <option value="XL">XL - Extra Large</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" id="taskStatus">
-                        <option value="Pending" selected>Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Done">Completed</option>
-                    </select>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Start Date</label>
+                        <input type="text" class="form-input" id="taskStartDate" placeholder="Select date">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Due Date</label>
+                        <input type="text" class="form-input" id="taskDueDate" placeholder="Select date">
+                    </div>
                 </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label class="form-label">Estimate (hours)</label>
+                        <input type="number" class="form-input" id="taskEstimate" min="0" step="0.5" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="taskStatus">
+                            <option value="Pending" selected>📋 Pending</option>
+                            <option value="In Progress">🚀 In Progress</option>
+                            <option value="Done">✅ Completed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Milestone</label>
+                    <input type="text" class="form-input" id="taskMilestone" placeholder="e.g., Sprint 1, Q1 2026">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Labels (comma separated)</label>
+                    <input type="text" class="form-input" id="taskLabels" placeholder="bug, feature, urgent">
+                </div>
+
                 <button type="submit" class="btn btn-success" style="width: 100%;">
                     <i class="fas fa-save"></i> Save Task
                 </button>
@@ -522,6 +563,19 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadConfig();
             renderTasks();
+
+            // Initialize date pickers
+            flatpickr("#taskStartDate", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "M j, Y"
+            });
+
+            flatpickr("#taskDueDate", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "M j, Y"
+            });
         });
 
         function loadConfig() {
@@ -559,7 +613,13 @@
                 title: document.getElementById('taskTitle').value,
                 assignee: document.getElementById('taskAssignee').value,
                 priority: document.getElementById('taskPriority').value,
-                status: document.getElementById('taskStatus').value
+                status: document.getElementById('taskStatus').value,
+                size: document.getElementById('taskSize').value,
+                startDate: document.getElementById('taskStartDate').value || null,
+                dueDate: document.getElementById('taskDueDate').value || null,
+                estimate: parseFloat(document.getElementById('taskEstimate').value) || 0,
+                milestone: document.getElementById('taskMilestone').value || null,
+                labels: document.getElementById('taskLabels').value.split(',').map(l => l.trim()).filter(l => l)
             };
 
             tasks.push(task);
@@ -624,9 +684,27 @@
         function createTaskCard(task) {
             const card = document.createElement('div');
             card.className = `task-card priority-${task.priority.toLowerCase()}`;
+
+            // Check if overdue
+            const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'Done';
+
+            let labelsHTML = '';
+            if (task.labels && task.labels.length > 0) {
+                labelsHTML = task.labels.map(label =>
+                    `<span style="background: #E0E7FF; color: #4338CA; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 4px;">${label}</span>`
+                ).join('');
+            }
+
             card.innerHTML = `
-                <div class="task-title">${task.title}</div>
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                    <div class="task-title" style="${isOverdue ? 'color: #EF4444;' : ''}">${task.title}</div>
+                    <span style="background: #F3F4F6; padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: 700;">${task.size || 'M'}</span>
+                </div>
                 <div class="task-assignee">👤 ${task.assignee}</div>
+                ${task.milestone ? `<div style="font-size: 12px; color: #6366F1; margin-top: 4px;">🎯 ${task.milestone}</div>` : ''}
+                ${task.estimate ? `<div style="font-size: 12px; color: #64748B; margin-top: 4px;">⏱️ ${task.estimate}h</div>` : ''}
+                ${task.dueDate ? `<div style="font-size: 12px; color: ${isOverdue ? '#EF4444' : '#64748B'}; margin-top: 4px;">📅 Due: ${task.dueDate}</div>` : ''}
+                ${labelsHTML ? `<div style="margin-top: 8px;">${labelsHTML}</div>` : ''}
             `;
             return card;
         }
@@ -644,8 +722,15 @@
                     },
                     body: JSON.stringify({
                         title: `[${task.status}] ${task.title}`,
-                        body: `**Assignee**: ${task.assignee}\\n**Priority**: ${task.priority}\\n**Status**: ${task.status}`,
-                        labels: [task.priority.toLowerCase(), task.status.toLowerCase().replace(' ', '-')]
+                        body: `**Assignee**: ${task.assignee}
+**Priority**: ${task.priority}
+**Status**: ${task.status}
+**Size**: ${task.size || 'M'}
+${task.startDate ? `**Start Date**: ${task.startDate}` : ''}
+${task.dueDate ? `**Due Date**: ${task.dueDate}` : ''}
+${task.estimate ? `**Estimate**: ${task.estimate} hours` : ''}
+${task.milestone ? `**Milestone**: ${task.milestone}` : ''}`,
+                        labels: [...(task.labels || []), task.priority.toLowerCase(), task.status.toLowerCase().replace(' ', '-'), task.size?.toLowerCase() || 'm']
                     })
                 });
 
