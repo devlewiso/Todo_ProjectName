@@ -594,6 +594,15 @@
         function closeNewTaskModal() {
             document.getElementById('newTaskModal').classList.remove('active');
             document.getElementById('newTaskForm').reset();
+
+            // Reset to "New Task" mode
+            currentEditingTask = null;
+            const submitBtn = document.querySelector('#newTaskForm button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Task';
+
+            // Hide delete button
+            const deleteBtn = document.getElementById('deleteTaskBtn');
+            if (deleteBtn) deleteBtn.style.display = 'none';
         }
 
         function openConfigModal() {
@@ -622,7 +631,18 @@
                 labels: document.getElementById('taskLabels').value.split(',').map(l => l.trim()).filter(l => l)
             };
 
-            tasks.push(task);
+            if (currentEditingTask) {
+                // Update existing task
+                const index = tasks.findIndex(t => t.id === currentEditingTask.id);
+                if (index !== -1) {
+                    tasks[index] = { ...currentEditingTask, ...task };
+                }
+                currentEditingTask = null;
+            } else {
+                // Create new task
+                tasks.push(task);
+            }
+
             renderTasks();
             closeNewTaskModal();
 
@@ -647,6 +667,54 @@
             alert('✅ Settings saved successfully');
             closeConfigModal();
         });
+
+        // Edit Task Modal
+        let currentEditingTask = null;
+
+        function openEditTaskModal(task) {
+            currentEditingTask = task;
+
+            // Populate form with task data
+            document.getElementById('taskTitle').value = task.title;
+            document.getElementById('taskAssignee').value = task.assignee;
+            document.getElementById('taskPriority').value = task.priority;
+            document.getElementById('taskSize').value = task.size || 'M';
+            document.getElementById('taskStartDate').value = task.startDate || '';
+            document.getElementById('taskDueDate').value = task.dueDate || '';
+            document.getElementById('taskEstimate').value = task.estimate || '';
+            document.getElementById('taskStatus').value = task.status;
+            document.getElementById('taskMilestone').value = task.milestone || '';
+            document.getElementById('taskLabels').value = task.labels ? task.labels.join(', ') : '';
+
+            // Change button text to "Update Task"
+            const submitBtn = document.querySelector('#newTaskForm button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Task';
+
+            // Add delete button if not exists
+            let deleteBtn = document.getElementById('deleteTaskBtn');
+            if (!deleteBtn) {
+                deleteBtn = document.createElement('button');
+                deleteBtn.id = 'deleteTaskBtn';
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn';
+                deleteBtn.style.cssText = 'width: 100%; margin-top: 8px; background: #EF4444; color: white;';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete Task';
+                deleteBtn.onclick = deleteTask;
+                submitBtn.parentElement.appendChild(deleteBtn);
+            }
+            deleteBtn.style.display = 'block';
+
+            openNewTaskModal();
+        }
+
+        function deleteTask() {
+            if (!confirm('Are you sure you want to delete this task?')) return;
+
+            tasks = tasks.filter(t => t.id !== currentEditingTask.id);
+            renderTasks();
+            closeNewTaskModal();
+            currentEditingTask = null;
+        }
 
         function renderTasks() {
             // Clear columns
@@ -733,6 +801,10 @@
                     </div>
                 ` : ''}
             `;
+
+            // Add click handler to open edit modal
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', () => openEditTaskModal(task));
 
             return card;
         }
