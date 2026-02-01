@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralCodeLab | CCAI Dashboard</title>
+    <style>
+        /* Estilo oscuro tipo Terminal/IDE */
+        :root { --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9; --accent: #58a6ff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 800px; margin: 0 auto; }
+        
+        /* Inputs y Botones */
+        input, select { background: var(--bg); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
+        button { background: #238636; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #2ea043; }
+
+        /* Tarjetas */
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; transition: transform 0.2s; }
+        .card:hover { border-color: var(--accent); transform: translateX(5px); }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        h3 { margin: 0 0 10px 0; font-size: 16px; color: var(--accent); }
+        
+        /* Etiquetas */
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid var(--border); margin-right: 4px; }
+        .status-open { color: #3fb950; border-color: #3fb950; }
+        
+        /* Configuración inicial */
+        #configPanel { background: #21262d; padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <h1>🚀 NeuralCodeLab Ops</h1>
+        <button onclick="clearConfig()" style="background: transparent; border: 1px solid var(--border); font-size: 12px;">⚙️ Reset Config</button>
+    </div>
+
+    <div id="configPanel">
+        <h3>🔐 Configuración Inicial</h3>
+        <p style="font-size: 0.9em; color: #8b949e;">Tus datos se guardan solo en tu navegador (Local Storage).</p>
+        <input type="text" id="repoUser" placeholder="Usuario de GitHub (ej. devlewiso)">
+        <input type="text" id="repoName" placeholder="Nombre del Repo (ej. neuralcodelab-dashboard)">
+        <input type="password" id="token" placeholder="Personal Access Token (ghp_...)">
+        <button onclick="saveConfig()">Guardar y Cargar</button>
+    </div>
+
+    <div id="mainApp" class="hidden">
+        <select id="labelFilter" onchange="fetchIssues()">
+            <option value="">📂 Ver Todo (CCAI + GenC + Infra)</option>
+            <option value="genc">🟢 Proyecto GenC</option>
+            <option value="auralink">🔵 AuraLink</option>
+            <option value="bug">🔴 Bugs</option>
+        </select>
+        <div id="loading">Cargando datos de GitHub...</div>
+        <div id="issuesContainer"></div>
+    </div>
+
+    <script>
+        // Cargar config al iniciar
+        const storedUser = localStorage.getItem('gh_user');
+        const storedRepo = localStorage.getItem('gh_repo');
+        const storedToken = localStorage.getItem('gh_token');
+
+        if (storedUser && storedToken) {
+            document.getElementById('configPanel').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            fetchIssues();
+        }
+
+        function saveConfig() {
+            const user = document.getElementById('repoUser').value;
+            const repo = document.getElementById('repoName').value;
+            const token = document.getElementById('token').value;
+
+            if(user && repo && token) {
+                localStorage.setItem('gh_user', user);
+                localStorage.setItem('gh_repo', repo);
+                localStorage.setItem('gh_token', token);
+                location.reload();
+            } else {
+                alert("Faltan datos bro!");
+            }
+        }
+
+        function clearConfig() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        async function fetchIssues() {
+            const user = localStorage.getItem('gh_user');
+            const repo = localStorage.getItem('gh_repo');
+            const token = localStorage.getItem('gh_token');
+            const filter = document.getElementById('labelFilter').value;
+            const container = document.getElementById('issuesContainer');
+            
+            container.innerHTML = '';
+            document.getElementById('loading').style.display = 'block';
+
+            let url = `https://api.github.com/repos/${user}/${repo}/issues?state=open`;
+            if (filter) url += `&labels=${filter}`;
+
+            try {
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Error de auth o repo no encontrado');
+
+                const issues = await response.json();
+                document.getElementById('loading').style.display = 'none';
+
+                issues.forEach(issue => {
+                    // Renderizado simple de tarjeta
+                    const labelsHtml = issue.labels.map(l => 
+                        `<span class="badge" style="color:#${l.color}; border-color:#${l.color}">${l.name}</span>`
+                    ).join('');
+
+                    const html = `
+                        <div class="card">
+                            <div class="card-header">
+                                <h3><a href="${issue.html_url}" target="_blank" style="text-decoration:none; color:inherit;">${issue.title}</a></h3>
+                                <span class="badge status-open">#${issue.number}</span>
+                            </div>
+                            <p style="font-size: 14px; color: #8b949e; margin-top: 5px;">
+                                ${issue.body ? issue.body.substring(0, 100) + '...' : 'Sin descripción'}
+                            </p>
+                            <div style="margin-top:10px;">${labelsHtml}</div>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                });
+            } catch (error) {
+                container.innerHTML = `<p style="color:red">Error: ${error.message}. <br>Revisa tu token o nombre del repo.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
