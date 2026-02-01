@@ -164,16 +164,19 @@
 
         .board-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            overflow-x: auto;
         }
+
 
         .board-column {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 20px;
+            padding: 16px;
             min-height: 500px;
+            min-width: 240px;
             box-shadow: var(--shadow-sm);
         }
 
@@ -410,10 +413,18 @@
         <div class="board-container">
             <div class="board-column">
                 <div class="column-header">
-                    <div class="column-title">📋 Pending</div>
-                    <div class="column-count" id="count-pending">0</div>
+                    <div class="column-title">� Backlog</div>
+                    <div class="column-count" id="count-backlog">0</div>
                 </div>
-                <div id="column-pending"></div>
+                <div id="column-backlog"></div>
+            </div>
+
+            <div class="board-column">
+                <div class="column-header">
+                    <div class="column-title">🎯 Ready</div>
+                    <div class="column-count" id="count-ready">0</div>
+                </div>
+                <div id="column-ready"></div>
             </div>
 
             <div class="board-column">
@@ -426,7 +437,15 @@
 
             <div class="board-column">
                 <div class="column-header">
-                    <div class="column-title">✅ Completed</div>
+                    <div class="column-title">👀 In Review</div>
+                    <div class="column-count" id="count-review">0</div>
+                </div>
+                <div id="column-review"></div>
+            </div>
+
+            <div class="board-column">
+                <div class="column-header">
+                    <div class="column-title">✅ Done</div>
                     <div class="column-count" id="count-done">0</div>
                 </div>
                 <div id="column-done"></div>
@@ -492,9 +511,11 @@
                     <div class="form-group">
                         <label class="form-label">Status</label>
                         <select class="form-select" id="taskStatus">
-                            <option value="Pending" selected>📋 Pending</option>
+                            <option value="Backlog" selected>� Backlog</option>
+                            <option value="Ready">🎯 Ready</option>
                             <option value="In Progress">🚀 In Progress</option>
-                            <option value="Done">✅ Completed</option>
+                            <option value="In Review">👀 In Review</option>
+                            <option value="Done">✅ Done</option>
                         </select>
                     </div>
                 </div>
@@ -718,21 +739,29 @@
 
         function renderTasks() {
             // Clear columns
-            document.getElementById('column-pending').innerHTML = '';
+            document.getElementById('column-backlog').innerHTML = '';
+            document.getElementById('column-ready').innerHTML = '';
             document.getElementById('column-progress').innerHTML = '';
+            document.getElementById('column-review').innerHTML = '';
             document.getElementById('column-done').innerHTML = '';
 
-            let pending = 0, progress = 0, done = 0;
+            let backlog = 0, ready = 0, progress = 0, review = 0, done = 0;
 
             tasks.forEach(task => {
                 const card = createTaskCard(task);
 
-                if (task.status === 'Pending') {
-                    document.getElementById('column-pending').appendChild(card);
-                    pending++;
+                if (task.status === 'Backlog') {
+                    document.getElementById('column-backlog').appendChild(card);
+                    backlog++;
+                } else if (task.status === 'Ready') {
+                    document.getElementById('column-ready').appendChild(card);
+                    ready++;
                 } else if (task.status === 'In Progress') {
                     document.getElementById('column-progress').appendChild(card);
                     progress++;
+                } else if (task.status === 'In Review') {
+                    document.getElementById('column-review').appendChild(card);
+                    review++;
                 } else if (task.status === 'Done') {
                     document.getElementById('column-done').appendChild(card);
                     done++;
@@ -741,11 +770,13 @@
 
             // Update stats
             document.getElementById('totalTasks').textContent = tasks.length;
-            document.getElementById('pendingTasks').textContent = pending;
-            document.getElementById('progressTasks').textContent = progress;
+            document.getElementById('pendingTasks').textContent = backlog + ready;
+            document.getElementById('progressTasks').textContent = progress + review;
             document.getElementById('doneTasks').textContent = done;
-            document.getElementById('count-pending').textContent = pending;
+            document.getElementById('count-backlog').textContent = backlog;
+            document.getElementById('count-ready').textContent = ready;
             document.getElementById('count-progress').textContent = progress;
+            document.getElementById('count-review').textContent = review;
             document.getElementById('count-done').textContent = done;
         }
 
